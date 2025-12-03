@@ -1,4 +1,4 @@
-const stripe = require("stripe")(process.env.STRIPE_SECRET);
+// const stripe = require("stripe")(process.env.STRIPE_SECRET);
 const asyncHandler = require("express-async-handler");
 const factory = require("./handlersFactory");
 const ApiError = require("../utils/apiError");
@@ -124,6 +124,7 @@ exports.updateOrderToDelivered = asyncHandler(async (req, res, next) => {
 // @route GET /api/v1/orders/checkout-session
 // @access Protected/User
 exports.checkOutSession = asyncHandler(async (req, res, next) => {
+  const stripe = require("stripe")(process.env.STRIPE_SECRET);
   console.log("Checkout session endpoint called");
 
   // App settings

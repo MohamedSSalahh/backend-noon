@@ -1,4 +1,6 @@
 const path = require("path");
+const http = require("http"); // Import http
+const { Server } = require("socket.io"); // Import Socket.io
 const morgan = require("morgan");
 const cors = require("cors");
 const compression = require("compression");
@@ -11,6 +13,8 @@ const hpp = require("hpp");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 
+const Chat = require('./models/chatModel'); // Import Chat Model
+
 dotenv.config({ path: "config.env" });
 
 const globalError = require("./middlewares/errorMiddleware");
@@ -22,10 +26,19 @@ dbConnection();
 
 // express app
 const app = express();
+const server = http.createServer(app); // Create HTTP server
 
 // Enable CORS - Allow to access from any website
 app.use(cors());
 app.options(/.*/, cors());
+
+// Initialize Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Allow all origins (adjust for production)
+    methods: ["GET", "POST"],
+  },
+});
 
 // compress all responses
 app.use(compression());
@@ -70,8 +83,43 @@ app.use(notFound);
 // Global error handling middleware
 app.use(globalError);
 
+// Socket.io Logic
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("join", (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined room`);
+  });
+
+  socket.on("sendMessage", async (data) => {
+    const { sender, receiver, message } = data;
+    
+    // Save to database
+    try {
+      const newChat = await Chat.create({
+        sender,
+        receiver,
+        message,
+      });
+
+      // Emit to receiver
+      io.to(receiver).emit("receiveMessage", newChat);
+      // Emit back to sender (optional, for confirmation or multi-device)
+      // io.to(sender).emit("receiveMessage", newChat); 
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
 const PORT = process.env.PORT || 8000;
-const server = app.listen(PORT, () => {
+// Listen on server, not app
+server.listen(PORT, () => {
   console.log(`App running at port:${PORT}`);
 });
 
