@@ -7,16 +7,19 @@ const factory = require("./handlersFactory");
 
 exports.uploadBrandImage = uploadSingleImage("image");
 
-exports.resizeImage = asyncHandler(async (req, res, next) => {
-  const filename = `brand-${uuidv4()}-${Date.now()}.jpeg`;
-  await sharp(req.file.buffer)
-    .resize(600, 600)
-    .toFormat("jpeg")
-    .png({ quality: 90 })
-    .toFile(`uploads/brands/${filename}`);
+const { uploadToCloudinary } = require("../utils/cloudinary");
 
-  // Save image into our db
-  req.body.image = filename;
+exports.resizeImage = asyncHandler(async (req, res, next) => {
+  if (req.file) {
+    const buffer = await sharp(req.file.buffer)
+      .resize(600, 600)
+      .toFormat("jpeg")
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    const result = await uploadToCloudinary(buffer, 'brands');
+    req.body.image = result.secure_url;
+  }
 
   next();
 });

@@ -87,30 +87,9 @@ productSchema.pre(/^find/, function (next) {
   this.populate({ path: "category", select: "name -_id" });
   next();
 });
-
-const setImageURL = (doc) => {
-  if (doc.imageCover) {
-    const imageUrl = `${process.env.BASE_URL}/products/${doc.imageCover}`;
-    doc.imageCover = imageUrl;
-  }
-  if (doc.images) {
-    const imageList = [];
-    doc.images.forEach((image) => {
-      const imageUrl = `${process.env.BASE_URL}/products/${image}`;
-      imageList.push(imageUrl);
-    });
-    doc.images = imageList;
-  }
-};
-// findOne,findAll,update
-productSchema.post("init", (doc) => {
-  setImageURL(doc);
-});
-
 // Create
 productSchema.post("save", (doc) => {
-  // return image base url + image name
-  setImageURL(doc);
+  // no custom logic
 });
 
 const Product = mongoose.model("Product", productSchema);

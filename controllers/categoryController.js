@@ -7,16 +7,18 @@ const { uploadSingleImage } = require("../middlewares/uploadImageMiddleware");
 
 exports.uploadCategoryImage = uploadSingleImage("image");
 
+const { uploadToCloudinary } = require("../utils/cloudinary");
+
 exports.resizeImage = asyncHandler(async (req, res, next) => {
-  const filename = `category-${uuidv4()}-${Date.now()}.jpeg`;
   if (req.file) {
-    await sharp(req.file.buffer)
+    const buffer = await sharp(req.file.buffer)
       .resize(600, 600)
       .toFormat("jpeg")
-      .png({ quality: 90 })
-      .toFile(`uploads/categories/${filename}`);
+      .jpeg({ quality: 90 })
+      .toBuffer();
 
-    req.body.image = filename;
+    const result = await uploadToCloudinary(buffer, 'categories');
+    req.body.image = result.secure_url;
   }
 
   next();
