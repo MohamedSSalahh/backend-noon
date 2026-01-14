@@ -10,6 +10,8 @@ const {
   checkOutSession,
 } = require("../controllers/orderController");
 
+const { generateInvoice } = require("../controllers/invoiceController");
+
 const { protect, allowedTo } = require("../controllers/authController");
 
 const router = express.Router();
@@ -27,6 +29,7 @@ router.get(
   getAllOrders
 );
 router.get("/:id", getSpecificOrder);
+router.get("/:id/invoice", generateInvoice);
 
 router.put(
   "/:id/deliver",
