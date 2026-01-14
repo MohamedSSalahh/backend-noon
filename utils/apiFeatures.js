@@ -44,6 +44,7 @@ class ApiFeatures {
         query.$or = [
           { title: { $regex: this.queryString.keyword, $options: "i" } },
           { description: { $regex: this.queryString.keyword, $options: "i" } },
+          { barcode: { $regex: this.queryString.keyword, $options: "i" } },
         ];
       } else {
         query = { name: { $regex: this.queryString.keyword, $options: "i" } };

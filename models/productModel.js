@@ -33,6 +33,14 @@ const productSchema = new mongoose.Schema(
       trim: true,
       max: [200000, "Too long product price"],
     },
+    barcode: {
+      type: String,
+      trim: true,
+      unique: true, 
+      // Not required by default for now to avoid breaking existing data, 
+      // but ideally should be. Sparse allow unique to ignore nulls.
+      sparse: true, 
+    },
     priceAfterDiscount: {
       type: Number,
     },

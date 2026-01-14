@@ -70,8 +70,42 @@ app.use(notFound);
 // Global error handling middleware
 app.use(globalError);
 
+
+const { Server } = require("socket.io");
+const http = require("http");
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Allow all origins for now (adjust for production)
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log(`User Connected: ${socket.id}`);
+
+  socket.on("join_chat", (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined their personal chat room`);
+  });
+
+  socket.on("send_message", (data) => {
+    // data: { senderId, receiverId, text, conversationId }
+    // Emit to receiver's room
+    socket.to(data.receiverId).emit("receive_message", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User Disconnected", socket.id);
+  });
+});
+
 const PORT = process.env.PORT || 8000;
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`App running at port:${PORT}`);
 });
 
