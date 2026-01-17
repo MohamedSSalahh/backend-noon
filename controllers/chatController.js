@@ -14,7 +14,8 @@ exports.getConversations = asyncHandler(async (req, res, next) => {
   
   const conversations = await Conversation.find(query)
     .populate("participants", "name email profileImg")
-    .populate("lastMessage");
+    .populate("lastMessage")
+    .sort({ updatedAt: -1 });
 
   res.status(200).json({ status: "success", results: conversations.length, data: conversations });
 });
@@ -46,4 +47,38 @@ exports.startConversation = asyncHandler(async (req, res, next) => {
   }
 
   res.status(200).json({ status: "success", data: conversation });
+});
+
+// @desc    Send Message
+// @route   POST /api/v1/chat/message
+// @access  Private
+exports.sendMessage = asyncHandler(async (req, res, next) => {
+  const { receiverId, text, conversationId } = req.body;
+
+  // 1) Create Message
+  const newMessage = await Message.create({
+    conversationId,
+    sender: req.user._id,
+    text,
+  });
+
+  // 2) Update Conversation lastMessage
+  await Conversation.findByIdAndUpdate(conversationId, {
+    lastMessage: newMessage._id,
+  });
+
+  // 3) Emit to receiver via Socket
+  // Structure should match what frontend expects
+  const messageData = {
+    _id: newMessage._id,
+    conversationId,
+    sender: req.user._id, // or populated object if needed immediately
+    text,
+    createdAt: newMessage.createdAt,
+  };
+  
+  // Assuming room name IS the userId
+  req.io.to(receiverId).emit("receive_message", messageData);
+
+  res.status(201).json({ status: "success", data: newMessage });
 });

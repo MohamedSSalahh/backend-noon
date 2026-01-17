@@ -85,6 +85,12 @@ const io = new Server(server, {
   },
 });
 
+// Middleware to attach io to req
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
@@ -93,10 +99,12 @@ io.on("connection", (socket) => {
     console.log(`User ${userId} joined their personal chat room`);
   });
 
-  socket.on("send_message", (data) => {
-    // data: { senderId, receiverId, text, conversationId }
-    // Emit to receiver's room
-    socket.to(data.receiverId).emit("receive_message", data);
+  socket.on("typing", (data) => {
+    socket.to(data.receiver).emit("typing", data.sender);
+  });
+
+  socket.on("stopTyping", (data) => {
+    socket.to(data.receiver).emit("stopTyping", data.sender);
   });
 
   socket.on("disconnect", () => {
